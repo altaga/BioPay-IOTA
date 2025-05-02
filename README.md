@@ -38,7 +38,7 @@ All technical implementations for main wallet are included here.
 
 - [TAB CODE](./biopay-app/src/screens/main/tabs/tab1.js)
 
-## Send Tokens:
+## Send Coins:
 
 All assets held by this wallet are fully available to the user.
 
@@ -51,7 +51,6 @@ Todas las coins que tenga esta wallet podran ser transferidas de forma sencilla 
     async createTx(transaction) {
         // Create a new transaction object
         const tx = new Transaction();
-
         // Determine which coin to split based on the transaction coin type
         let coinToSplit;
         if (transaction.coin === blockchain.tokens[0].coinType) {
@@ -181,28 +180,193 @@ All technical implementations for this feature are included here.
 
 #### Payment Example:
 
-The merchant can easily execute a payment by opening the payment tab. The payment is the same as making a payment at any current POS, simply by entering the amount in dollars, swiping the card and either the customer or the merchant selecting the token they wish to pay with.
+The merchant can easily execute a payment by opening the payment tab. The payment is the same as making a payment at any current POS, simply by entering the amount in dollars, swiping the card and either the customer or the merchant selecting the coin they wish to pay with.
 
-<img src="./Images/pos01.png" width="32%"> <img src="./Images/pos02.png" width="32%"> <img src="./Images/pos03.png" width="32%">
+<img src="./Images/pos1.jpg" width="32%"> <img src="./Images/pos2.jpg" width="32%"> <img src="./Images/pos3.jpg" width="32%">
 
-Finally, once the token to pay has been selected, we can see the status in the testnet explorer, if the hardware allows it, print the receipt for the customer or return to the main menu to make another payment.
+Finally, once the coin to pay has been selected, we can see the status in the testnet explorer, if the hardware allows it, print the receipt for the customer or return to the main menu to make another payment.
 
-<img src="./Images/pos04.png" width="32%"> <img src="./Images/pos05.png" width="32%"> <img src="./Images/pos06.png" width="32%">
+<img src="./Images/pos4.jpg" width="32%"> <img src="./Images/pos5.jpg" width="32%"> <img src="./Images/pos6.jpg" width="32%">
 
 All technical implementations for transactions are included here.
 
 - [TAB CODE](./biopay-app/src/screens/paymentWallet/paymentWallet.js)
 - [READ CARD CODE](./biopay-app/src/screens/main/components/readCard.js)
-- [CLOUD TRANSFER](./)
+- [CLOUD TRANSFER](./cloud/cloudFunctions/transfer.js)
 
-## FaceDID:
+## FaceDID and DID:
 
+Como parte de las nuevas tecnologias de IOTA, creamos basandonos en el IOTA identity framework una nueva forma de a travez de solo el rostro de los usuarios, esta tecnologia si bien no es nueva, ya que hay paises como China que ya la han implmentado [4](#references), nunca se habia intentado a travez de Decentralized Identifiers.
 
+<img src="./Images/face1.jpg" width="32%"> <img src="./Images/face2.jpg" width="32%"> <img src="./Images/face3.jpg" width="32%">
+
+### DID Payment:
+
+El pago a travez del QR tiene 3 pasos principales.
+
+<img src="./Images/QR Diagram.drawio.png">
+
+---
+
+- QR Generation: Primero se realiza un QR de uso unico para que la informacion pueda llegar desde el dispositivo de pago (el smartphone del usuario) a la aplicacion para realizar el cobro (el punto de venta), esto se hace atravez de un nonce unico.
+
+    ```javascript
+    const Accounts = db.collection("payments");
+    const nonce = req.body.nonce;
+    const did = req.body.did;
+    const query = await Accounts.where("nonce", "==", nonce).get();
+    if (!query.empty) {
+        throw "Query Empty";
+    }
+    let dataFrame = {
+        nonce,
+        did
+    };
+    await Accounts.doc(nonce).set(dataFrame);
+    res.send({res: "ok"});
+    ```
+- DID Validation: Una vez obtenemos el DID asosciado con el el usuario, relizamos una validacion de del DID del usuario con su identidad onchain cuando se creo su registro.
+
+    ```javascript
+    const { did, amount, to, coin } = req.body;
+    const Accounts = db.collection("bioPayDID");
+    const query = await Accounts.where("did", "==", did).get();
+    if (query.empty) {
+        throw "Query Empty";
+    }
+    const holderJSON = query.docs[0].data();
+    const { keyId, publicKeyJwk, document, id } = holderJSON;
+    const { identityClient } = await loadDID({
+        keyId,
+        publicKeyJwk,
+        document,
+        id,
+    });
+    const loadedDID = IotaDID.fromJSON(did);
+    await identityClient.resolveDid(loadedDID);     
+    ```
+- Transaction: Una vez que hemos realizado ambas validaciones tenemos suficiente evidencia de que la identidad de la persona es la correcta, asi que gracias a eso podemos realizar la transaccion desde la wallet del usuario.
+
+    ```javascript
+    const { publicKey, privateKey } = holderJSON;
+    const privateKeyBuffer = decodeIotaPrivateKey(privateKey);
+    const signer = Ed25519Keypair.fromSecretKey(privateKeyBuffer.secretKey);
+    const transaction = await createTx({
+        publicKey,
+        amount: epsilonRound(parseFloat(amount), 9) * Math.pow(10, 9),
+        to,
+        coin,
+    });
+    const result = await client.signAndExecuteTransaction({
+        signer,
+        transaction,
+    });
+    const receipt = await client.waitForTransaction({ digest: result.digest });
+    res.send(
+        JSON.stringify({
+            digest: receipt.digest
+        })
+    ); ~   
+    ```
+
+All technical implementations for this feature are included here.
+
+- [DID VALIDATION](./cloud/cloudFunctions/transfer.js)
+
+### FaceDID Payment:
+
+El pago a travez del rostro tiene 3 pasos principales.
+
+<img src="./Images/face Diagram.drawio.png">
+
+---
+
+- Face Recognition: Primero se toma la foto del rostro de la persona y a travez de nuestra AI obtenemos el resultado de cual es el DID de la persona, esta AI ya tiene implementado un algoritmo de Antispoofing para evitar actores malintencionados al realizar la deteccion.
+
+    ```python
+    @app.post("/findUser", dependencies=[Depends(check_api_key)])
+    async def findUser(item: ItemFind):
+        random_string = os.urandom(32).hex()
+        userImage = base64.b64decode(item.image)
+        userImage = Image.open(BytesIO(userImage))
+        userImage.save(f'deepface/temp/{random_string}.jpg')
+        try:
+            result = DeepFace.find(img_path= f'deepface/temp/{random_string}.jpg', db_path='deepface/db', anti_spoofing = True)
+            return {"result": result[0].identity[0].split('.')[0].split('/')[2]}
+        except ValueError as e:
+            return {"result": False}
+        finally:
+            os.remove(f'deepface/temp/{random_string}.jpg')
+    ```
+- DID Validation: Una vez obtenemos el DID asosciado con el rostro, relizamos una validacion de del DID del usuario con su identidad onchain cuando se creo su registro.
+
+    ```javascript
+    const { did, amount, to, coin } = req.body;
+    const Accounts = db.collection("bioPayDID");
+    const query = await Accounts.where("did", "==", did).get();
+    if (query.empty) {
+        throw "Query Empty";
+    }
+    const holderJSON = query.docs[0].data();
+    const { keyId, publicKeyJwk, document, id } = holderJSON;
+    const { identityClient } = await loadDID({
+        keyId,
+        publicKeyJwk,
+        document,
+        id,
+    });
+    const loadedDID = IotaDID.fromJSON(did);
+    await identityClient.resolveDid(loadedDID);     
+    ```
+- Transaction: Una vez que hemos realizado ambas validaciones tenemos suficiente evidencia de que la identidad de la persona es la correcta, asi que gracias a eso podemos realizar la transaccion desde la wallet del usuario.
+
+    ```javascript
+    const { publicKey, privateKey } = holderJSON;
+    const privateKeyBuffer = decodeIotaPrivateKey(privateKey);
+    const signer = Ed25519Keypair.fromSecretKey(privateKeyBuffer.secretKey);
+    const transaction = await createTx({
+        publicKey,
+        amount: epsilonRound(parseFloat(amount), 9) * Math.pow(10, 9),
+        to,
+        coin,
+    });
+    const result = await client.signAndExecuteTransaction({
+        signer,
+        transaction,
+    });
+    const receipt = await client.waitForTransaction({ digest: result.digest });
+    res.send(
+        JSON.stringify({
+            digest: receipt.digest
+        })
+    ); ~   
+    ```
+
+All technical implementations for this feature are included here.
+
+- [FACE RECOGNITION](./cloud/faceRecognition/main.py)
+- [DID VALIDATION](./cloud/cloudFunctions/transfer.js)
+
+### Payment Example:
+
+The merchant can easily execute a payment by opening the payment tab. The payment process remains the same as making a payment at any current POS—simply enter the amount in dollars, and instead of swiping a card, the customer or merchant selects the coin they wish to pay with. The transaction is authenticated using FaceDID, a facial recognition-based payment system, ensuring a seamless and secure checkout experience.
+
+<img src="./Images/posf1.jpg" width="32%"> <img src="./Images/posf2.jpg" width="32%"> <img src="./Images/posf3.jpg" width="32%">
+
+Finally, once the coin to pay has been selected, we can see the status in the testnet explorer, if the hardware allows it, print the receipt for the customer or return to the main menu to make another payment.
+
+<img src="./Images/posf4.jpg" width="32%"> <img src="./Images/posf5.jpg" width="32%"> <img src="./Images/posf6.jpg" width="32%">
+
+All technical implementations for transactions are included here.
+
+- [TAB CODE](./biopay-app/src/screens/paymentWallet/paymentWallet.js)
+- [FACE RECOGNITION](./cloud/faceRecognition/main.py)
+- [DID VALIDATION](./cloud/cloudFunctions/transfer.js)
 
 # References:
 
 1. https://cointelegraph.com/news/stablecoin-issuer-circle-partners-sony-blockchain-lab-usdc-expansion
 2. https://www.triple-a.io/cryptocurrency-ownership-data
 3. https://medium.com/@androidcrypto/talk-to-your-credit-card-android-nfc-java-d782ff19fc4a
-4. https://stripe.com/en-mx/resources/more/text-to-pay-101-what-it-is-how-it-works-and-how-to-implement-it
+4. https://www.bitdefender.com/en-us/blog/hotforsecurity/alipay-introduces-facial-recognition-for-payments-in-china
 
