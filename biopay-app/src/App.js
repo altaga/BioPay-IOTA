@@ -55,14 +55,6 @@ export default function App() {
           <Stack.Screen name="DepositWallet" component={DepositWallet} />
           <Stack.Screen name="SendWallet" component={SendWallet} />
           <Stack.Screen name="PaymentWallet" component={PaymentWallet} />
-          {/*  
-          
-          {
-            // Chat Screens
-            //<Stack.Screen name="Chat" component={Chat} />
-          }
-
-            */}
         </Stack.Navigator>
       </NavigationContainer>
     </ContextProvider>
