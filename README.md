@@ -1,6 +1,6 @@
 # BioPay-IOTA
  
-Secure, with face decentralized identity, smart savings, and easy card payments—powered by IOTA.
+Secure, with face decentralized identity and payments, smart savings, and easy card payments—powered by IOTA.
 
 <img src="./Images/logoBio.png">
 
@@ -44,7 +44,7 @@ All assets held by this wallet are fully available to the user.
 
 <img src="./Images/send1.jpg" width="32%">
 
-Todas las coins que tenga esta wallet podran ser transferidas de forma sencilla mediante Send, sin embargo el codigo para mandarlas varia de coin nativa IOTA y todas las demas coins.
+All coins in this wallet can be easily transferred using Send, however the code to send them varies from the native IOTA coin to all other coins.
 
 - Send Coins:
     ```javascript
@@ -196,19 +196,19 @@ All technical implementations for transactions are included here.
 
 ## FaceDID and DID:
 
-Como parte de las nuevas tecnologias de IOTA, creamos basandonos en el IOTA identity framework una nueva forma de a travez de solo el rostro de los usuarios, esta tecnologia si bien no es nueva, ya que hay paises como China que ya la han implmentado [4](#references), nunca se habia intentado a travez de Decentralized Identifiers.
+As part of IOTA's new technologies, we created a new way of identifying users based on the IOTA identity framework, using only the user's face. Although this technology is not new, since there are countries like China that have already implemented it [4](#references), it had never been attempted through Decentralized Identifiers.
 
 <img src="./Images/face1.jpg" width="32%"> <img src="./Images/face2.jpg" width="32%"> <img src="./Images/face3.jpg" width="32%">
 
 ### DID Payment:
 
-El pago a travez del QR tiene 3 pasos principales.
+Payment via QR has 3 main steps.
 
 <img src="./Images/QR Diagram.drawio.png">
 
 ---
 
-- QR Generation: Primero se realiza un QR de uso unico para que la informacion pueda llegar desde el dispositivo de pago (el smartphone del usuario) a la aplicacion para realizar el cobro (el punto de venta), esto se hace atravez de un nonce unico.
+- QR Generation: First, a single-use QR code is created so that the information can reach the payment device (the user's smartphone) from the payment app (the point of sale). This is done through a unique nonce.
 
     ```javascript
     const Accounts = db.collection("payments");
@@ -225,7 +225,7 @@ El pago a travez del QR tiene 3 pasos principales.
     await Accounts.doc(nonce).set(dataFrame);
     res.send({res: "ok"});
     ```
-- DID Validation: Una vez obtenemos el DID asosciado con el el usuario, relizamos una validacion de del DID del usuario con su identidad onchain cuando se creo su registro.
+- DID Validation: Once we obtain the DID associated with the user, we perform a validation of the user's DID with their onchain identity when their registration was created.
 
     ```javascript
     const { did, amount, to, coin } = req.body;
@@ -245,7 +245,7 @@ El pago a travez del QR tiene 3 pasos principales.
     const loadedDID = IotaDID.fromJSON(did);
     await identityClient.resolveDid(loadedDID);     
     ```
-- Transaction: Una vez que hemos realizado ambas validaciones tenemos suficiente evidencia de que la identidad de la persona es la correcta, asi que gracias a eso podemos realizar la transaccion desde la wallet del usuario.
+- Transaction: Once we've performed both validations, we have sufficient evidence that the person's identity is correct, so thanks to that we can carry out the transaction from the user's wallet.
 
     ```javascript
     const { publicKey, privateKey } = holderJSON;
@@ -281,7 +281,7 @@ El pago a travez del rostro tiene 3 pasos principales.
 
 ---
 
-- Face Recognition: Primero se toma la foto del rostro de la persona y a travez de nuestra AI obtenemos el resultado de cual es el DID de la persona, esta AI ya tiene implementado un algoritmo de Antispoofing para evitar actores malintencionados al realizar la deteccion.
+- Face Recognition: First, a photo of the person's face is taken, and through our AI, we obtain the result of the person's DID. This AI already has an Antispoofing algorithm implemented to prevent malicious actors from making the detection.
 
     ```python
     @app.post("/findUser", dependencies=[Depends(check_api_key)])
@@ -298,7 +298,7 @@ El pago a travez del rostro tiene 3 pasos principales.
         finally:
             os.remove(f'deepface/temp/{random_string}.jpg')
     ```
-- DID Validation: Una vez obtenemos el DID asosciado con el rostro, relizamos una validacion de del DID del usuario con su identidad onchain cuando se creo su registro.
+- DID Validation: Once we obtain the DID associated with the face, we validate the user's DID with their on-chain identity when their registration was created.
 
     ```javascript
     const { did, amount, to, coin } = req.body;
@@ -318,7 +318,7 @@ El pago a travez del rostro tiene 3 pasos principales.
     const loadedDID = IotaDID.fromJSON(did);
     await identityClient.resolveDid(loadedDID);     
     ```
-- Transaction: Una vez que hemos realizado ambas validaciones tenemos suficiente evidencia de que la identidad de la persona es la correcta, asi que gracias a eso podemos realizar la transaccion desde la wallet del usuario.
+- Transaction: Once we've performed both validations, we have sufficient evidence that the person's identity is correct, so thanks to that we can carry out the transaction from the user's wallet.
 
     ```javascript
     const { publicKey, privateKey } = holderJSON;
