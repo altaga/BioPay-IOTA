@@ -55,6 +55,9 @@ export default function App() {
           <Stack.Screen name="DepositWallet" component={DepositWallet} />
           <Stack.Screen name="SendWallet" component={SendWallet} />
           <Stack.Screen name="PaymentWallet" component={PaymentWallet} />
+          {
+            // If you let Vibe coders take the lead—it’s a fast track to mediocrity and a potential disaster.
+          }
         </Stack.Navigator>
       </NavigationContainer>
     </ContextProvider>
