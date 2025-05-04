@@ -275,7 +275,7 @@ All technical implementations for this feature are included here.
 
 ### FaceDID Payment:
 
-El pago a travez del rostro tiene 3 pasos principales.
+Payment via face has 3 main steps.
 
 <img src="./Images/face Diagram.drawio.png">
 
