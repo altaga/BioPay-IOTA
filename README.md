@@ -19,10 +19,10 @@ VIDEODEMO: [VIDEO](pending...)
 <img src="./Images/General Diagram.drawio.png">
 
 - IOTA:
-  - IOTA Identity: Este framework nos permite crear identidades decentralizadas, las cuales nos abren las posibilidades de crear formas inovadoras de realizar pruebas de validacion e incluso zk proofs.
-  - IOTA TS SDK: Mediante este framework realizamos todas las conexiones a la red de IOTA con el fin de realias transacciones, validacion de identidad y todos los pagos.
+   - IOTA Identity: This framework allows us to create decentralized identities, which opens up the possibility of creating innovative ways to perform validation tests and even ZK proofs.
+   - IOTA TS SDK: Through this framework, we make all connections to the IOTA network for transactions, identity validation, and all payments.
 - VM GPU:
-  - Deepface API: Esta API nos permite de forma sencilla realizar reconocimiento facial de los usuarios junto con la valicacion de identidad mediante el DID, nos permite relizar pagos unicamente con el rostro del usuario.
+   - Deepface API: This API allows us to easily perform facial recognition of users along with identity validation using the DID, allowing us to make payments solely with the user's face.
 
 # Features:
 
