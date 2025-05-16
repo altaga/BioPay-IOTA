@@ -10,7 +10,7 @@ WALLET CODE: [CODE](./biopay-app/)
 
 PLAYSTORE LINK: [LINK](https://play.google.com/store/apps/details?id=com.altaga.biopay.iota)
 
-VIDEODEMO: [VIDEO](https://www.youtube.com/watch?v=nHfelRW4tN4)
+VIDEODEMO: [VIDEO](https://www.youtube.com/watch?v=BbVOW1_oqLM)
 
 # System Diagram:
 
